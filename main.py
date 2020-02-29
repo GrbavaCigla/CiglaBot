@@ -1,9 +1,8 @@
-import discord
 import wikipedia
 from discord.ext import commands
 from random import randint, choice
 import string
-from os import system, environ
+from os import environ
 import sqlite3
 
 client = commands.Bot(command_prefix="!")
@@ -52,13 +51,19 @@ async def save(ctx, *, msg):
 
 @client.command(brief="Loads text stored by save. (!load [key])")
 async def load(ctx, key):
-    cursor.execute("SELECT msg FROM saves WHERE key=?", (key,))
-    await ctx.send("`{}`".format(cursor.fetchone()[0]))
+    try:
+        cursor.execute("SELECT msg FROM saves WHERE key=?", (key,))
+        await ctx.send("`{}`".format(cursor.fetchone()[0]))
+    except Exception as e:
+        pass
 
 
 @client.command(brief="Gives you summary of given query. (!wiki [query])")
 async def wiki(ctx, *, text):
-    await ctx.send("`{}`".format(wikipedia.summary(text, auto_suggest=False)))
+    try:
+        await ctx.send("`{}`".format(wikipedia.summary(text, auto_suggest=False)))
+    except Exception as e:
+        await ctx.send("```{}```".format(e))
 
 
 @client.command(brief="Prints all the keys. (!keys)")
@@ -83,6 +88,5 @@ async def choose(ctx, *, sol):
 @client.command(brief="Clears all text in channel")
 async def clear(ctx):
     await ctx.channel.purge()
-
 
 client.run(environ.get("DISCORD_SECRET_KEY"))
