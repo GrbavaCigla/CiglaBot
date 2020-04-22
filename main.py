@@ -1,7 +1,9 @@
 import wikipedia
 from discord.ext import commands
+from urllib.parse import unquote
 from random import randint, choice
 import string
+import requests
 from os import environ
 import sqlite3
 
@@ -10,6 +12,7 @@ conn = sqlite3.connect('saves.db')
 cursor = conn.cursor()
 cursor.execute(
     "CREATE TABLE IF NOT EXISTS saves (key varchar(14), msg text);")
+lang = "en"
 
 
 def get_keys(filename):
@@ -40,6 +43,12 @@ async def ping(ctx):
     await ctx.send("Ping is {}ms".format(round(client.latency * 1000)))
 
 
+@client.command(brief="Change language of wiki")
+async def lang(ctx, language):
+    lang = language
+    wikipedia.set_lang(language)
+
+
 @client.command(brief="Saves snippet of text in file, gives you the key. Get keys with !keys, loads message with !load. (!save [text])")
 async def save(ctx, *, msg):
     key = generate_key("saves.db")
@@ -53,7 +62,7 @@ async def save(ctx, *, msg):
 async def load(ctx, key):
     try:
         cursor.execute("SELECT msg FROM saves WHERE key=?", (key,))
-        await ctx.send("`{}`".format(cursor.fetchone()[0]))
+        await ctx.send("```{}```".format(cursor.fetchone()[0]))
     except Exception as e:
         pass
 
@@ -61,7 +70,13 @@ async def load(ctx, key):
 @client.command(brief="Gives you summary of given query. (!wiki [query])")
 async def wiki(ctx, *, text):
     try:
-        await ctx.send("`{}`".format(wikipedia.summary(text, auto_suggest=False)))
+        if lang == "en":
+            await ctx.send("```{}```".format(wikipedia.summary(text, auto_suggest=False)))
+        else:
+            query = requests.get(f"https://{lang}.wikipedia.org/wiki/{text}")
+            query = unquote(query.url.split("/")[-1])
+            ctx.send("```{}```".format(
+                wikipedia.summary(text, auto_suggest=False)))
     except Exception as e:
         await ctx.send("```{}```".format(e))
 
