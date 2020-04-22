@@ -12,7 +12,7 @@ conn = sqlite3.connect('saves.db')
 cursor = conn.cursor()
 cursor.execute(
     "CREATE TABLE IF NOT EXISTS saves (key varchar(14), msg text);")
-lang = "en"
+lang_code = "en"
 
 
 def get_keys(filename):
@@ -45,7 +45,9 @@ async def ping(ctx):
 
 @client.command(brief="Change language of wiki")
 async def lang(ctx, language):
-    lang = language
+    global lang_code
+    lang_code = language
+    print(lang_code)
     wikipedia.set_lang(language)
 
 
@@ -70,13 +72,14 @@ async def load(ctx, key):
 @client.command(brief="Gives you summary of given query. (!wiki [query])")
 async def wiki(ctx, *, text):
     try:
-        if lang == "en":
+        if lang_code == "en":
             await ctx.send("```{}```".format(wikipedia.summary(text, auto_suggest=False)))
         else:
-            query = requests.get(f"https://{lang}.wikipedia.org/wiki/{text}")
+            query = requests.get(
+                f"https://{lang_code}.wikipedia.org/wiki/{text}")
             query = unquote(query.url.split("/")[-1])
-            ctx.send("```{}```".format(
-                wikipedia.summary(text, auto_suggest=False)))
+            await ctx.send("```{}```".format(
+                wikipedia.summary(query, auto_suggest=False)))
     except Exception as e:
         await ctx.send("```{}```".format(e))
 
