@@ -1,36 +1,35 @@
 import wikipedia
 from discord.ext import commands
+import discord
 from urllib.parse import unquote
 from random import randint, choice
 import string
 import requests
 from os import environ
 import sqlite3
+import csv
 
-client = commands.Bot(command_prefix="!")
-conn = sqlite3.connect('saves.db')
+CREATE_TABLE_Q = "CREATE TABLE IF NOT EXISTS saves (key varchar(14), msg text);"
+SELECT_KEY_Q = "SELECT key FROM saves;"
+INSERT_INTO_Q = "INSERT INTO saves (key, msg) VALUES (?, ?);"
+SELECT_MSG_BY_KEY_Q = "SELECT msg FROM saves WHERE key=?"
+
+DICE_IMAGES = [
+    "https://upload.wikimedia.org/wikipedia/commons/2/2c/Alea_1.png",
+    "https://upload.wikimedia.org/wikipedia/commons/b/b8/Alea_2.png",
+    "https://upload.wikimedia.org/wikipedia/commons/2/2f/Alea_3.png",
+    "https://upload.wikimedia.org/wikipedia/commons/8/8d/Alea_4.png",
+    "https://upload.wikimedia.org/wikipedia/commons/5/55/Alea_5.png",
+    "https://upload.wikimedia.org/wikipedia/commons/f/f4/Alea_6.png"
+]
+
+client = commands.Bot(command_prefix="c!")
 cursor = conn.cursor()
-cursor.execute(
-    "CREATE TABLE IF NOT EXISTS saves (key varchar(14), msg text);")
+cursor.execute(CREATE_TABLE_Q)
 lang_code = "en"
 
-
-def get_keys(filename):
-    cursor.execute("SELECT key FROM saves;")
-    return [i[0] for i in cursor.fetchall()]
-
-
-def generate_raw_key(stringLength=12):
-    letters = string.ascii_lowercase
-    return ''.join(choice(letters) for i in range(stringLength))
-
-
-def generate_key(filename):
-    bla = generate_raw_key()
-    keys = get_keys(filename)
-    while bla in keys:
-        bla = generate_raw_key()
-    return bla
+with open('descriptions.csv', 'r') as file:
+    descriptions = dict(csv.reader(file, delimiter="\t"))
 
 
 @client.event
@@ -38,12 +37,12 @@ async def on_ready():
     print("Online!")
 
 
-@client.command(brief="Gives you ping latency in miliseconds")
+@client.command(brief=descriptions["ping"])
 async def ping(ctx):
     await ctx.send("Ping is {}ms".format(round(client.latency * 1000)))
 
 
-@client.command(brief="Change language of wiki")
+@client.command(brief=descriptions["lang"])
 async def lang(ctx, language):
     global lang_code
     lang_code = language
@@ -51,59 +50,57 @@ async def lang(ctx, language):
     wikipedia.set_lang(language)
 
 
-@client.command(brief="Saves snippet of text in file, gives you the key. Get keys with !keys, loads message with !load. (!save [text])")
-async def save(ctx, *, msg):
-    key = generate_key("saves.db")
-    cursor.execute(
-        "INSERT INTO saves (key, msg) VALUES (?, ?); ", (key, msg))
-    conn.commit()
-    await ctx.send("Your unique key is: " + key)
+def get_wiki(query, lang):
+    if lang != "en":
+        url = f"https://{lang}.wikipedia.org/wiki/{query}"
+        query = requests.get(url)
+        query = unquote(query.url.split("/")[-1])
+
+    wiki_page = wikipedia.page(query, auto_suggest=False)
+
+    embed = discord.Embed(
+        title=wiki_page.title,
+        url=wiki_page.url,
+        description=wiki_page.summary
+    )
+    embed.add_field(name="Language", value=lang)
+    embed.set_footer(text="c!lang to change language")
+    return embed
 
 
-@client.command(brief="Loads text stored by save. (!load [key])")
-async def load(ctx, key):
-    try:
-        cursor.execute("SELECT msg FROM saves WHERE key=?", (key,))
-        await ctx.send("```{}```".format(cursor.fetchone()[0]))
-    except Exception as e:
-        pass
-
-
-@client.command(brief="Gives you summary of given query. (!wiki [query])")
+@client.command(brief=descriptions["wiki"])
 async def wiki(ctx, *, text):
     try:
-        if lang_code == "en":
-            await ctx.send("```{}```".format(wikipedia.summary(text, auto_suggest=False)))
-        else:
-            query = requests.get(
-                f"https://{lang_code}.wikipedia.org/wiki/{text}")
-            query = unquote(query.url.split("/")[-1])
-            await ctx.send("```{}```".format(
-                wikipedia.summary(query, auto_suggest=False)))
+        embed = get_wiki(text, lang_code)
+        for i in dir(client) + dir(ctx):
+            if "server" in i or "say" in i:
+                print(i)
+        await ctx.send(embed=embed)
+
     except Exception as e:
         await ctx.send("```{}```".format(e))
 
 
-@client.command(brief="Prints all the keys. (!keys)")
+@client.command(brief=descriptions["keys"])
 async def keys(ctx):
     keys = get_keys("saves.db")
     msg = "\n".join(keys)
     await ctx.send("List of keys:\n" + msg)
 
 
-@client.command(brief="Rolls a dice and gives you the result between 1 and 6. (!roll)")
+@client.command(brief=descriptions["roll"])
 async def roll(ctx):
-    await ctx.send("Rolling a dice: {}".format(randint(1, 6)))
+    await ctx.send(DICE_IMAGES[randint(1, 6)])
 
 
-@client.command(brief="Chooses between texts, texts are separated by ;. example: !choose bla; bla1;bla2. (!choose [text];...)")
+@client.command(brief=descriptions["choose"])
 async def choose(ctx, *, sol):
     print(sol)
     soll = choice(sol.split(";"))
     await ctx.send("My choice is: {}".format(soll))
 
 
-@client.command(brief="Clears all text in channel")
+@client.command(brief=descriptions["clear"])
 async def clear(ctx):
     await ctx.channel.purge()
 
