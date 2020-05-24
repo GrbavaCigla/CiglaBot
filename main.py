@@ -6,13 +6,7 @@ from random import randint, choice
 import string
 import requests
 from os import environ
-import sqlite3
 import csv
-
-CREATE_TABLE_Q = "CREATE TABLE IF NOT EXISTS saves (key varchar(14), msg text);"
-SELECT_KEY_Q = "SELECT key FROM saves;"
-INSERT_INTO_Q = "INSERT INTO saves (key, msg) VALUES (?, ?);"
-SELECT_MSG_BY_KEY_Q = "SELECT msg FROM saves WHERE key=?"
 
 DICE_IMAGES = [
     "https://upload.wikimedia.org/wikipedia/commons/2/2c/Alea_1.png",
@@ -24,30 +18,10 @@ DICE_IMAGES = [
 ]
 
 client = commands.Bot(command_prefix="c!")
-cursor = conn.cursor()
-cursor.execute(CREATE_TABLE_Q)
-lang_code = "en"
+LANG = "en"
 
 with open('descriptions.csv', 'r') as file:
-    descriptions = dict(csv.reader(file, delimiter="\t"))
-
-
-@client.event
-async def on_ready():
-    print("Online!")
-
-
-@client.command(brief=descriptions["ping"])
-async def ping(ctx):
-    await ctx.send("Ping is {}ms".format(round(client.latency * 1000)))
-
-
-@client.command(brief=descriptions["lang"])
-async def lang(ctx, language):
-    global lang_code
-    lang_code = language
-    print(lang_code)
-    wikipedia.set_lang(language)
+    DESCRIPTIONS = dict(csv.reader(file, delimiter="\t"))
 
 
 def get_wiki(query, lang):
@@ -68,10 +42,28 @@ def get_wiki(query, lang):
     return embed
 
 
-@client.command(brief=descriptions["wiki"])
+@client.event
+async def on_ready():
+    print("Online!")
+
+
+@client.command(brief=DESCRIPTIONS["ping"])
+async def ping(ctx):
+    await ctx.send("Ping is {}ms".format(round(client.latency * 1000)))
+
+
+@client.command(brief=DESCRIPTIONS["lang"])
+async def lang(ctx, language):
+    global LANG
+    LANG = language
+    print(LANG)
+    wikipedia.set_lang(language)
+
+
+@client.command(brief=DESCRIPTIONS["wiki"])
 async def wiki(ctx, *, text):
     try:
-        embed = get_wiki(text, lang_code)
+        embed = get_wiki(text, lLANGang_code)
         for i in dir(client) + dir(ctx):
             if "server" in i or "say" in i:
                 print(i)
@@ -81,27 +73,40 @@ async def wiki(ctx, *, text):
         await ctx.send("```{}```".format(e))
 
 
-@client.command(brief=descriptions["keys"])
-async def keys(ctx):
-    keys = get_keys("saves.db")
-    msg = "\n".join(keys)
-    await ctx.send("List of keys:\n" + msg)
-
-
-@client.command(brief=descriptions["roll"])
+@client.command(brief=DESCRIPTIONS["roll"])
 async def roll(ctx):
     await ctx.send(DICE_IMAGES[randint(1, 6)])
 
 
-@client.command(brief=descriptions["choose"])
+@client.command(brief=DESCRIPTIONS["choose"])
 async def choose(ctx, *, sol):
     print(sol)
     soll = choice(sol.split(";"))
     await ctx.send("My choice is: {}".format(soll))
 
 
-@client.command(brief=descriptions["clear"])
+@client.command(brief=DESCRIPTIONS["clear"])
 async def clear(ctx):
     await ctx.channel.purge()
+
+
+@client.command(brief=DESCRIPTIONS["unban"])
+async def unban(ctx, user: discord.User):
+    await client.unban(ctx.message.server, user)
+
+
+@client.command(brief=DESCRIPTIONS["ban"])
+async def unban(ctx, user: discord.User):
+    await client.ban(ctx.message.server, user)
+
+
+@client.command(brief=DESCRIPTIONS["mute"])
+async def mute(ctx, user: discord.User):
+    await client.mute(ctx.message.server, user)
+
+
+@client.command(brief=DESCRIPTIONS["unmute"])
+async def unmute(ctx, user: discord.User):
+    await client.unmute(ctx.message.server, user)
 
 client.run(environ.get("DISCORD_SECRET_KEY"))

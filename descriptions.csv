@@ -1,9 +1,6 @@
 lang	Change language of wiki
 ping	Gives you ping latency in miliseconds
-save	Saves snippet of text in file, gives you the key. Get keys with c!keys, loads message with c!load.
-load	Loads text stored by save. (c!load [key])
 wiki	Gives you summary of given query. (c!wiki [query])
-keys	Prints all the keys. (c!keys)
 roll	Rolls a dice and gives you the result between 1 and 6. (c!roll)
 choose	Chooses between texts, texts are separated by ;. example: c!choose bla; bla1;bla2.
 clear	Clears all text in channel
