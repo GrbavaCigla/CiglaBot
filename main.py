@@ -72,7 +72,7 @@ async def wiki(ctx, *, text):
 
 @client.command(brief=DESCRIPTIONS["roll"])
 async def roll(ctx):
-    await ctx.send(DICE_IMAGES[randint(1, 6)])
+    await ctx.send(DICE_IMAGES[randint(0, 5)])
 
 
 @client.command(brief=DESCRIPTIONS["choose"])
