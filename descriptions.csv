@@ -1,6 +1,10 @@
-lang	Change language of wiki
-ping	Gives you ping latency in miliseconds
-wiki	Gives you summary of given query. (c!wiki [query])
-roll	Rolls a dice and gives you the result between 1 and 6. (c!roll)
-choose	Chooses between texts, texts are separated by ;. example: c!choose bla; bla1;bla2.
-clear	Clears all text in channel
+lang	Change language of wiki,
+ping	Print ping latency in miliseconds,
+wiki	Print summary of given query.
+roll	Roll a dice.
+choose	Choose between texts, texts are separated by `;`.
+clear	Clear all text in channel.
+unban	Unban user
+mute	Mute user
+unmute	Unmute user
+ban	Ban user

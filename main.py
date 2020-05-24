@@ -64,9 +64,6 @@ async def lang(ctx, language):
 async def wiki(ctx, *, text):
     try:
         embed = get_wiki(text, lLANGang_code)
-        for i in dir(client) + dir(ctx):
-            if "server" in i or "say" in i:
-                print(i)
         await ctx.send(embed=embed)
 
     except Exception as e:
@@ -90,23 +87,10 @@ async def clear(ctx):
     await ctx.channel.purge()
 
 
-@client.command(brief=DESCRIPTIONS["unban"])
-async def unban(ctx, user: discord.User):
-    await client.unban(ctx.message.server, user)
-
-
 @client.command(brief=DESCRIPTIONS["ban"])
-async def unban(ctx, user: discord.User):
-    await client.ban(ctx.message.server, user)
+@commands.has_permissions(ban_members=True)
+async def ban(ctx, user: discord.User):
+    await ctx.guild.ban(user)
 
-
-@client.command(brief=DESCRIPTIONS["mute"])
-async def mute(ctx, user: discord.User):
-    await client.mute(ctx.message.server, user)
-
-
-@client.command(brief=DESCRIPTIONS["unmute"])
-async def unmute(ctx, user: discord.User):
-    await client.unmute(ctx.message.server, user)
 
 client.run(environ.get("DISCORD_SECRET_KEY"))
