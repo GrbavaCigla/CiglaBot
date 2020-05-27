@@ -63,7 +63,7 @@ async def lang(ctx, language):
 @client.command(brief=DESCRIPTIONS["wiki"])
 async def wiki(ctx, *, text):
     try:
-        embed = get_wiki(text, lLANGang_code)
+        embed = get_wiki(text, LANG)
         await ctx.send(embed=embed)
 
     except Exception as e:
